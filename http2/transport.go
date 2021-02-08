@@ -1305,11 +1305,40 @@ var (
 	errReqBodyTooLong = errors.New("http2: request body larger than specified content length")
 )
 
+type MsgType uint8
+const (
+	DataMsgType              = MsgType(1)
+	ServerStreamCloseMsgType = MsgType(2)
+)
+
+// BufferMsg is the basic transfer unit in one stream
+type BufferMsg struct {
+	Buffer  *bytes.Buffer
+	MsgType MsgType
+	Err     error
+}
+
+
+type StreamingRequest struct {
+	SendChan chan BufferMsg
+}
+
+func (sr*StreamingRequest)Read(p []byte)(n int, err error){
+	return 0, nil
+}
+
+func (sr *StreamingRequest) Close() error{
+	return nil
+}
+
 func (cs *clientStream) writeRequestBody(body io.Reader, bodyCloser io.Closer) (err error) {
 	cc := cs.cc
 	sentEnd := false // whether we sent the final DATA frame w/ END_STREAM
 	buf := cc.frameScratchBuffer()
 	defer cc.putFrameScratchBuffer(buf)
+	sreq := body.(*StreamingRequest)
+	sendChan := sreq.SendChan
+
 
 	defer func() {
 		traceWroteRequest(cs.trace, err)
@@ -1328,70 +1357,79 @@ func (cs *clientStream) writeRequestBody(body io.Reader, bodyCloser io.Closer) (
 	remainLen := actualContentLength(req)
 	hasContentLen := remainLen != -1
 
-	var sawEOF bool
-	for !sawEOF {
-		n, err := body.Read(buf[:len(buf)-1])
-		if hasContentLen {
-			remainLen -= int64(n)
-			if remainLen == 0 && err == nil {
-				// The request body's Content-Length was predeclared and
-				// we just finished reading it all, but the underlying io.Reader
-				// returned the final chunk with a nil error (which is one of
-				// the two valid things a Reader can do at EOF). Because we'd prefer
-				// to send the END_STREAM bit early, double-check that we're actually
-				// at EOF. Subsequent reads should return (0, EOF) at this point.
-				// If either value is different, we return an error in one of two ways below.
-				var n1 int
-				n1, err = body.Read(buf[n:])
-				remainLen -= int64(n1)
+
+	for {
+		newMsgBuffer := <- sendChan
+		if newMsgBuffer.MsgType == ServerStreamCloseMsgType{
+			break
+		}
+		newBody := newMsgBuffer.Buffer
+		var sawEOF bool
+		for !sawEOF{
+			n, err := newBody.Read(buf[:len(buf)-1])
+			if hasContentLen {
+				remainLen -= int64(n)
+				if remainLen == 0 && err == nil {
+					// The request body's Content-Length was predeclared and
+					// we just finished reading it all, but the underlying io.Reader
+					// returned the final chunk with a nil error (which is one of
+					// the two valid things a Reader can do at EOF). Because we'd prefer
+					// to send the END_STREAM bit early, double-check that we're actually
+					// at EOF. Subsequent reads should return (0, EOF) at this point.
+					// If either value is different, we return an error in one of two ways below.
+					var n1 int
+					n1, err = body.Read(buf[n:])
+					remainLen -= int64(n1)
+				}
+				if remainLen < 0 {
+					err = errReqBodyTooLong
+					cc.writeStreamReset(cs.ID, ErrCodeCancel, err)
+					return err
+				}
 			}
-			if remainLen < 0 {
-				err = errReqBodyTooLong
+			if err == io.EOF {
+				sawEOF = true
+				err = nil
+			} else if err != nil {
 				cc.writeStreamReset(cs.ID, ErrCodeCancel, err)
 				return err
 			}
-		}
-		if err == io.EOF {
-			sawEOF = true
-			err = nil
-		} else if err != nil {
-			cc.writeStreamReset(cs.ID, ErrCodeCancel, err)
-			return err
-		}
 
-		remain := buf[:n]
-		for len(remain) > 0 && err == nil {
-			var allowed int32
-			allowed, err = cs.awaitFlowControl(len(remain))
-			switch {
-			case err == errStopReqBodyWrite:
-				return err
-			case err == errStopReqBodyWriteAndCancel:
-				cc.writeStreamReset(cs.ID, ErrCodeCancel, nil)
-				return err
-			case err != nil:
+			remain := buf[:n]
+			for len(remain) > 0 && err == nil {
+				var allowed int32
+				allowed, err = cs.awaitFlowControl(len(remain))
+				switch {
+				case err == errStopReqBodyWrite:
+					return err
+				case err == errStopReqBodyWriteAndCancel:
+					cc.writeStreamReset(cs.ID, ErrCodeCancel, nil)
+					return err
+				case err != nil:
+					return err
+				}
+				cc.wmu.Lock()
+				data := remain[:allowed]
+				remain = remain[allowed:]
+				sentEnd = sawEOF && len(remain) == 0 && !hasTrailers
+				err = cc.fr.WriteData(cs.ID, sentEnd, data)
+				if err == nil {
+					// TODO(bradfitz): this flush is for latency, not bandwidth.
+					// Most requests won't need this. Make this opt-in or
+					// opt-out?  Use some heuristic on the body type? Nagel-like
+					// timers?  Based on 'n'? Only last chunk of this for loop,
+					// unless flow control tokens are low? For now, always.
+					// If we change this, see comment below.
+					err = cc.bw.Flush()
+				}
+				cc.wmu.Unlock()
+			}
+			if err != nil {
 				return err
 			}
-			cc.wmu.Lock()
-			data := remain[:allowed]
-			remain = remain[allowed:]
-			sentEnd = sawEOF && len(remain) == 0 && !hasTrailers
-			err = cc.fr.WriteData(cs.ID, sentEnd, data)
-			if err == nil {
-				// TODO(bradfitz): this flush is for latency, not bandwidth.
-				// Most requests won't need this. Make this opt-in or
-				// opt-out?  Use some heuristic on the body type? Nagel-like
-				// timers?  Based on 'n'? Only last chunk of this for loop,
-				// unless flow control tokens are low? For now, always.
-				// If we change this, see comment below.
-				err = cc.bw.Flush()
-			}
-			cc.wmu.Unlock()
-		}
-		if err != nil {
-			return err
 		}
 	}
+
 
 	if sentEnd {
 		// Already sent END_STREAM (which implies we have no
