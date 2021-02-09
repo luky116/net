@@ -15,6 +15,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"golang.org/x/net/http2/triple"
 	"io"
 	"io/ioutil"
 	"log"
@@ -1305,38 +1306,12 @@ var (
 	errReqBodyTooLong = errors.New("http2: request body larger than specified content length")
 )
 
-type MsgType uint8
-const (
-	DataMsgType              = MsgType(1)
-	ServerStreamCloseMsgType = MsgType(2)
-)
-
-// BufferMsg is the basic transfer unit in one stream
-type BufferMsg struct {
-	Buffer  *bytes.Buffer
-	MsgType MsgType
-	Err     error
-}
-
-
-type StreamingRequest struct {
-	SendChan chan BufferMsg
-}
-
-func (sr*StreamingRequest)Read(p []byte)(n int, err error){
-	return 0, nil
-}
-
-func (sr *StreamingRequest) Close() error{
-	return nil
-}
-
 func (cs *clientStream) writeRequestBody(body io.Reader, bodyCloser io.Closer) (err error) {
 	cc := cs.cc
 	sentEnd := false // whether we sent the final DATA frame w/ END_STREAM
 	buf := cc.frameScratchBuffer()
 	defer cc.putFrameScratchBuffer(buf)
-	sreq := body.(*StreamingRequest)
+	sreq := body.(*triple.StreamingRequest)
 	sendChan := sreq.SendChan
 
 
@@ -1360,7 +1335,7 @@ func (cs *clientStream) writeRequestBody(body io.Reader, bodyCloser io.Closer) (
 
 	for {
 		newMsgBuffer := <- sendChan
-		if newMsgBuffer.MsgType == ServerStreamCloseMsgType{
+		if newMsgBuffer.MsgType == triple.ServerStreamCloseMsgType{
 			break
 		}
 		newBody := newMsgBuffer.Buffer
@@ -1532,6 +1507,11 @@ func (cc *ClientConn) encodeHeaders(req *http.Request, addGzipHeader bool, trail
 			}
 		}
 	}
+	// 1. req.Body.(req)
+	// 2. req.Header <- write
+	sreq := req.Body.(*triple.StreamingRequest)
+	req.Header = sreq.Handler.WriteTripleReqHeaderField(req.Header)
+
 
 	// Check for any invalid headers and return an error before we
 	// potentially pollute our hpack state. (We want to be able to
