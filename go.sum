@@ -183,6 +183,8 @@ github.com/dubbogo/gost v1.9.0/go.mod h1:pPTjVyoJan3aPxBPNUX0ADkXjPibLo+/Ib0/fAD
 github.com/dubbogo/gost v1.9.5/go.mod h1:QNM5RaeRdNWehUu8S0hUP5Qa8QUfGf6KH1JhqOVFvEI=
 github.com/dubbogo/triple v0.0.0-20210208032901-d211d4981bbe h1:Dpqm1qPB0iR7GMzcOYZqxCgpqZUU+tVqlkLHX5B17CM=
 github.com/dubbogo/triple v0.0.0-20210208032901-d211d4981bbe/go.mod h1:ULV/Y9oyHId8sZaNfGi9yWomJ0Q22JThWcOawAaVUJw=
+github.com/dubbogo/triple v0.0.0-20210209063802-ba75c3ed4425 h1:GfP2419Tc0SVAyE4qXdfvsM/G52xkoh/lCKmDIbgTO0=
+github.com/dubbogo/triple v0.0.0-20210209063802-ba75c3ed4425/go.mod h1:H0+IdFdLkIm5m8rCn8ANoJQuIp+K1U/7ifm8f4EUPvA=
 github.com/dustin/go-humanize v0.0.0-20171111073723-bb3d318650d4/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5mFgVsvEsIPBvNs=
