@@ -1,7 +1,10 @@
 package triple
 
-import "bytes"
-import tripleCommon "github.com/dubbogo/triple/pkg/common"
+import (
+	"bytes"
+	"context"
+	"net/http"
+)
 
 type MsgType uint8
 const (
@@ -16,10 +19,23 @@ type BufferMsg struct {
 	Err     error
 }
 
+// ProtocolHeader
+type ProtocolHeader interface {
+	GetStreamID() uint32
+	GetPath() string
+	FieldToCtx() context.Context
+}
+
+type ProtocolHeaderHandler interface {
+	ReadFromTripleReqHeader(header *http.Request) ProtocolHeader
+	WriteTripleReqHeaderField(header http.Header) http.Header
+	WriteTripleFinalRspHeaderField(w http.ResponseWriter)
+}
+
 
 type StreamingRequest struct {
 	SendChan chan BufferMsg
-	Handler tripleCommon.ProtocolHeaderHandler
+	Handler ProtocolHeaderHandler
 }
 
 func (sr*StreamingRequest)Read(p []byte)(n int, err error){

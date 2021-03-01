@@ -9,8 +9,8 @@ package ipv6
 import (
 	"unsafe"
 
-	"golang.org/x/net/internal/iana"
-	"golang.org/x/net/internal/socket"
+	"github.com/dubbogo/net/internal/iana"
+	"github.com/dubbogo/net/internal/socket"
 )
 
 func marshal2292HopLimit(b []byte, cm *ControlMessage) []byte {

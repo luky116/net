@@ -10,9 +10,9 @@ import (
 	"runtime"
 	"testing"
 
-	"golang.org/x/net/internal/iana"
-	"golang.org/x/net/ipv6"
-	"golang.org/x/net/nettest"
+	"github.com/dubbogo/net/internal/iana"
+	"github.com/dubbogo/net/ipv6"
+	"github.com/dubbogo/net/nettest"
 )
 
 func TestConnInitiatorPathMTU(t *testing.T) {

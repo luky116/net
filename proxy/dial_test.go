@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/internal/sockstest"
-	"golang.org/x/net/nettest"
+	"github.com/dubbogo/net/internal/sockstest"
+	"github.com/dubbogo/net/nettest"
 )
 
 func TestDial(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"testing"
 
-	"golang.org/x/net/ipv4"
-	"golang.org/x/net/nettest"
+	"github.com/dubbogo/net/ipv4"
+	"github.com/dubbogo/net/nettest"
 )
 
 var packetConnMulticastSocketOptionTests = []struct {

@@ -15,7 +15,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"golang.org/x/net/http2/triple"
+	"github.com/dubbogo/net/http2/triple"
 	"io"
 	"io/ioutil"
 	"log"
@@ -32,9 +32,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"golang.org/x/net/http/httpguts"
-	"golang.org/x/net/http2/hpack"
-	"golang.org/x/net/idna"
+	"github.com/dubbogo/net/http/httpguts"
+	"github.com/dubbogo/net/http2/hpack"
+	"github.com/dubbogo/net/idna"
 )
 
 const (
