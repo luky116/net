@@ -304,6 +304,7 @@ type clientStream struct {
 	pastTrailers bool  // got optional second MetaHeadersFrame (trailers)
 	num1xx       uint8 // number of 1xx responses seen
 
+	trailerChan chan http.Header
 	trailer    http.Header  // accumulated trailers
 	resTrailer *http.Header // client's Response.Trailer
 }
@@ -1135,7 +1136,7 @@ func (cc *ClientConn) roundTrip(req *http.Request) (res *http.Response, gotErrAf
 	bodyWritten := false
 	ctx := req.Context()
 
-	handleReadLoopResponse := func(re resAndError) (*http.Response, bool, error) {
+	handleReadLoopResponse := func(re resAndError, trailerChan chan http.Header) (*http.Response, bool, error) {
 		res := re.res
 		if re.err != nil || res.StatusCode > 299 {
 			// On error or status code 3xx, 4xx, 5xx, etc abort any
@@ -1157,6 +1158,12 @@ func (cc *ClientConn) roundTrip(req *http.Request) (res *http.Response, gotErrAf
 			cc.forgetStreamID(cs.ID)
 			return nil, cs.getStartedWrite(), re.err
 		}
+		// set triple response body with can return channel of trailer
+		oriBody := res.Body
+		triBody := &triple.ResponseBody{}
+		triBody.SetRawHttp2ResponseBody(oriBody)
+		triBody.SetTrailerChan(trailerChan)
+		res.Body = triBody
 		res.Request = req
 		res.TLS = cc.tlsState
 		return res, false, nil
@@ -1165,7 +1172,7 @@ func (cc *ClientConn) roundTrip(req *http.Request) (res *http.Response, gotErrAf
 	for {
 		select {
 		case re := <-readLoopResCh:
-			return handleReadLoopResponse(re)
+			return handleReadLoopResponse(re, cs.trailerChan)
 		case <-respHeaderTimer:
 			if !hasBody || bodyWritten {
 				cc.writeStreamReset(cs.ID, ErrCodeCancel, nil)
@@ -1206,7 +1213,7 @@ func (cc *ClientConn) roundTrip(req *http.Request) (res *http.Response, gotErrAf
 			// Prefer the read loop's response, if available. Issue 16102.
 			select {
 			case re := <-readLoopResCh:
-				return handleReadLoopResponse(re)
+				return handleReadLoopResponse(re, cs.trailerChan)
 			default:
 			}
 			if err != nil {
@@ -1712,6 +1719,7 @@ func (cc *ClientConn) newStream() *clientStream {
 		resc:      make(chan resAndError, 1),
 		peerReset: make(chan struct{}),
 		done:      make(chan struct{}),
+		trailerChan: make(chan http.Header),
 	}
 	cs.flow.add(int32(cc.initialWindowSize))
 	cs.flow.setConnFlow(&cc.flow)
@@ -1943,7 +1951,11 @@ func (rl *clientConnReadLoop) processHeaders(f *MetaHeadersFrame) error {
 	if !cs.pastHeaders {
 		cs.pastHeaders = true
 	} else {
-		return rl.processTrailers(cs, f)
+		if err := rl.processTrailers(cs, f); err != nil{
+			return err
+		}
+		cs.trailerChan <- cs.trailer
+		return nil
 	}
 
 	res, err := rl.handleResponse(cs, f)

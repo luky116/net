@@ -16,7 +16,6 @@ const (
 type BufferMsg struct {
 	Buffer  *bytes.Buffer
 	MsgType MsgType
-	Err     error
 }
 
 // ProtocolHeader
@@ -29,7 +28,7 @@ type ProtocolHeader interface {
 type ProtocolHeaderHandler interface {
 	ReadFromTripleReqHeader(header *http.Request) ProtocolHeader
 	WriteTripleReqHeaderField(header http.Header) http.Header
-	WriteTripleFinalRspHeaderField(w http.ResponseWriter)
+	WriteTripleFinalRspHeaderField(w http.ResponseWriter,grpcStatusCode int, grpcMessage string, traceProtoBin int)
 }
 
 
