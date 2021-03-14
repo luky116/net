@@ -20,14 +20,19 @@ type BufferMsg struct {
 
 // ProtocolHeader
 type ProtocolHeader interface {
-	GetStreamID() uint32
 	GetPath() string
 	FieldToCtx() context.Context
 }
 
+// ProtocolHeaderHandler
 type ProtocolHeaderHandler interface {
+	// ReadFromTripleReqHeader read http header field from http request to ProtocolHeader
 	ReadFromTripleReqHeader(header *http.Request) ProtocolHeader
+
+	// WriteTripleReqHeaderField write protocol header fields to http Header
 	WriteTripleReqHeaderField(header http.Header) http.Header
+
+	// WriteTripleFinalRspHeaderField write protocol trailer fields to http2 trailer header
 	WriteTripleFinalRspHeaderField(w http.ResponseWriter,grpcStatusCode int, grpcMessage string, traceProtoBin int)
 }
 
