@@ -23,6 +23,9 @@ func (rsp*ResponseBody) GetTrailer()http.Header{
 	trailer := <- rsp.trailerChan
 	return trailer
 }
+func (rsp*ResponseBody) GetTrailerChan() chan http.Header{
+	return rsp.trailerChan
+}
 
 func (rsp*ResponseBody) SetTrailerChan(trailerChan chan http.Header){
 	rsp.trailerChan = trailerChan
