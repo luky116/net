@@ -2371,7 +2371,7 @@ func TestServer_Rejects_Too_Many_Streams(t *testing.T) {
 	inHandler := make(chan uint32)
 	leaveHandler := make(chan bool)
 	st := newServerTester(t, func(w http.ResponseWriter, r *http.Request) {
-		id := w.(*responseWriter).rws.stream.id
+		id := w.(*Http2ResponseWriter).rws.stream.id
 		inHandler <- id
 		if id == 1+(defaultMaxStreams+1)*2 && r.URL.Path != testPath {
 			t.Errorf("decoded final path as %q; want %q", r.URL.Path, testPath)

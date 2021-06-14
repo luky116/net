@@ -566,11 +566,11 @@ func (sc *serverConn) curOpenStreams() uint32 {
 
 // stream represents a stream. This is the minimal metadata needed by
 // the serve goroutine. Most of the actual stream state is owned by
-// the http.Handler's goroutine in the responseWriter. Because the
-// responseWriter's responseWriterState is recycled at the end of a
+// the http.Handler's goroutine in the Http2ResponseWriter. Because the
+// Http2ResponseWriter's responseWriterState is recycled at the end of a
 // handler, this struct intentionally has no pointer to the
-// *responseWriter{,State} itself, as the Handler ending nils out the
-// responseWriter's state field.
+// *Http2ResponseWriter{,State} itself, as the Handler ending nils out the
+// Http2ResponseWriter's state field.
 type stream struct {
 	// immutable:
 	sc        *serverConn
@@ -1972,7 +1972,7 @@ func (sc *serverConn) newStream(id, pusherID uint32, state streamState) *stream 
 	return st
 }
 
-func (sc *serverConn) newWriterAndRequest(st *stream, f *MetaHeadersFrame) (*responseWriter, *http.Request, error) {
+func (sc *serverConn) newWriterAndRequest(st *stream, f *MetaHeadersFrame) (*Http2ResponseWriter, *http.Request, error) {
 	sc.serveG.check()
 
 	rp := requestParam{
@@ -2042,7 +2042,7 @@ type requestParam struct {
 	header                  http.Header
 }
 
-func (sc *serverConn) newWriterAndRequestNoBody(st *stream, rp requestParam) (*responseWriter, *http.Request, error) {
+func (sc *serverConn) newWriterAndRequestNoBody(st *stream, rp requestParam) (*Http2ResponseWriter, *http.Request, error) {
 	sc.serveG.check()
 
 	var tlsState *tls.ConnectionState // nil if not scheme https
@@ -2123,12 +2123,12 @@ func (sc *serverConn) newWriterAndRequestNoBody(st *stream, rp requestParam) (*r
 	rws.req = req
 	rws.body = body
 
-	rw := &responseWriter{rws: rws}
+	rw := &Http2ResponseWriter{rws: rws}
 	return rw, req, nil
 }
 
 // Run on its own goroutine.
-func (sc *serverConn) runHandler(rw *responseWriter, req *http.Request, handler func(http.ResponseWriter, *http.Request)) {
+func (sc *serverConn) runHandler(rw *Http2ResponseWriter, req *http.Request, handler func(http.ResponseWriter, *http.Request)) {
 	didPanic := true
 	defer func() {
 		rw.rws.stream.cancelCtx()
@@ -2317,21 +2317,21 @@ func (b *requestBody) Read(p []byte) (n int, err error) {
 	return
 }
 
-// responseWriter is the http.ResponseWriter implementation. It's
+// Http2ResponseWriter is the http.ResponseWriter implementation. It's
 // intentionally small (1 pointer wide) to minimize garbage. The
 // responseWriterState pointer inside is zeroed at the end of a
-// request (in handlerDone) and calls on the responseWriter thereafter
+// request (in handlerDone) and calls on the Http2ResponseWriter thereafter
 // simply crash (caller's mistake), but the much larger responseWriterState
 // and buffers are reused between multiple requests.
-type responseWriter struct {
+type Http2ResponseWriter struct {
 	rws *responseWriterState
 }
 
 // Optional http.ResponseWriter interfaces implemented.
 var (
-	_ http.CloseNotifier = (*responseWriter)(nil)
-	_ http.Flusher       = (*responseWriter)(nil)
-	_ stringWriter       = (*responseWriter)(nil)
+	_ http.CloseNotifier = (*Http2ResponseWriter)(nil)
+	_ http.Flusher       = (*Http2ResponseWriter)(nil)
+	_ stringWriter       = (*Http2ResponseWriter)(nil)
 )
 
 type responseWriterState struct {
@@ -2556,7 +2556,7 @@ func (rws *responseWriterState) promoteUndeclaredTrailers() {
 	}
 }
 
-func (w *responseWriter) Flush() {
+func (w *Http2ResponseWriter) Flush() {
 	rws := w.rws
 	if rws == nil {
 		panic("Header called after Handler finished")
@@ -2575,7 +2575,7 @@ func (w *responseWriter) Flush() {
 	}
 }
 
-func (w *responseWriter) CloseNotify() <-chan bool {
+func (w *Http2ResponseWriter) CloseNotify() <-chan bool {
 	rws := w.rws
 	if rws == nil {
 		panic("CloseNotify called after Handler finished")
@@ -2595,7 +2595,7 @@ func (w *responseWriter) CloseNotify() <-chan bool {
 	return ch
 }
 
-func (w *responseWriter) Header() http.Header {
+func (w *Http2ResponseWriter) Header() http.Header {
 	rws := w.rws
 	if rws == nil {
 		panic("Header called after Handler finished")
@@ -2624,7 +2624,7 @@ func checkWriteHeaderCode(code int) {
 	}
 }
 
-func (w *responseWriter) WriteHeader(code int) {
+func (w *Http2ResponseWriter) WriteHeader(code int) {
 	rws := w.rws
 	if rws == nil {
 		panic("WriteHeader called after Handler finished")
@@ -2661,16 +2661,16 @@ func cloneHeader(h http.Header) http.Header {
 // * -> chunkWriter{rws}
 // * -> responseWriterState.writeChunk(p []byte)
 // * -> responseWriterState.writeChunk (most of the magic; see comment there)
-func (w *responseWriter) Write(p []byte) (n int, err error) {
+func (w *Http2ResponseWriter) Write(p []byte) (n int, err error) {
 	return w.write(len(p), p, "")
 }
 
-func (w *responseWriter) WriteString(s string) (n int, err error) {
+func (w *Http2ResponseWriter) WriteString(s string) (n int, err error) {
 	return w.write(len(s), nil, s)
 }
 
 // either dataB or dataS is non-zero.
-func (w *responseWriter) write(lenData int, dataB []byte, dataS string) (n int, err error) {
+func (w *Http2ResponseWriter) write(lenData int, dataB []byte, dataS string) (n int, err error) {
 	rws := w.rws
 	if rws == nil {
 		panic("Write called after Handler finished")
@@ -2694,7 +2694,7 @@ func (w *responseWriter) write(lenData int, dataB []byte, dataS string) (n int, 
 	}
 }
 
-func (w *responseWriter) handlerDone() {
+func (w *Http2ResponseWriter) handlerDone() {
 	rws := w.rws
 	dirty := rws.dirty
 	rws.handlerDone = true
@@ -2717,9 +2717,9 @@ var (
 	ErrPushLimitReached = errors.New("http2: push would exceed peer's SETTINGS_MAX_CONCURRENT_STREAMS")
 )
 
-var _ http.Pusher = (*responseWriter)(nil)
+var _ http.Pusher = (*Http2ResponseWriter)(nil)
 
-func (w *responseWriter) Push(target string, opts *http.PushOptions) error {
+func (w *Http2ResponseWriter) Push(target string, opts *http.PushOptions) error {
 	st := w.rws.stream
 	sc := st.sc
 	sc.serveG.checkNotOn()
@@ -2831,7 +2831,7 @@ func (sc *serverConn) startPush(msg *startPushRequest) {
 	// PUSH_PROMISE frames MUST only be sent on a peer-initiated stream that
 	// is in either the "open" or "half-closed (remote)" state.
 	if msg.parent.state != stateOpen && msg.parent.state != stateHalfClosedRemote {
-		// responseWriter.Push checks that the stream is peer-initiated.
+		// Http2ResponseWriter.Push checks that the stream is peer-initiated.
 		msg.done <- errStreamClosed
 		return
 	}
