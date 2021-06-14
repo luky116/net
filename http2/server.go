@@ -2580,7 +2580,7 @@ func (w *Http2ResponseWriter) Flush() {
 		// (writeChunk with zero bytes, so we have to do it
 		// ourselves to force the HTTP response header and/or
 		// final DATA frame (with END_STREAM) to be sent.
-		//rws.writeChunk(nil)
+		rws.writeChunk(nil)
 	}
 }
 
