@@ -69,7 +69,9 @@ var (
 var responseWriterStatePool = sync.Pool{
 	New: func() interface{} {
 		rws := &responseWriterState{}
-		rws.bw = bufio.NewWriterSize(chunkWriter{rws}, handlerChunkWriteSize)
+		cw := chunkWriter{rws}
+		rws.bw = bufio.NewWriterSize(cw, handlerChunkWriteSize)
+		rws.bwwr = cw
 		return rws
 	},
 }
@@ -2118,7 +2120,9 @@ func (sc *serverConn) newWriterAndRequestNoBody(st *stream, rp requestParam) (*H
 	*rws = responseWriterState{} // zero all the fields
 	rws.conn = sc
 	rws.bw = bwSave
-	rws.bw.Reset(chunkWriter{rws})
+	cw := chunkWriter{rws}
+	rws.bw.Reset(cw)
+	rws.bwwr = cw
 	rws.stream = st
 	rws.req = req
 	rws.body = body
@@ -2343,6 +2347,7 @@ type responseWriterState struct {
 
 	// TODO: adjust buffer writing sizes based on server config, frame size updates from peer, etc
 	bw *bufio.Writer // writing to a chunkWriter{this *responseWriterState}
+	bwwr chunkWriter
 
 	// mutated by http.Handler goroutine:
 	handlerHeader http.Header // nil until called
@@ -2556,6 +2561,10 @@ func (rws *responseWriterState) promoteUndeclaredTrailers() {
 	}
 }
 
+func (w*Http2ResponseWriter) FlushHeader(){
+	w.rws.bwwr.Write([]byte{})
+}
+
 func (w *Http2ResponseWriter) Flush() {
 	rws := w.rws
 	if rws == nil {
@@ -2571,7 +2580,7 @@ func (w *Http2ResponseWriter) Flush() {
 		// (writeChunk with zero bytes, so we have to do it
 		// ourselves to force the HTTP response header and/or
 		// final DATA frame (with END_STREAM) to be sent.
-		rws.writeChunk(nil)
+		//rws.writeChunk(nil)
 	}
 }
 
