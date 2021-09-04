@@ -7,6 +7,7 @@ import (
 )
 
 type MsgType uint8
+
 const (
 	DataMsgType              = MsgType(1)
 	ServerStreamCloseMsgType = MsgType(2)
@@ -33,19 +34,18 @@ type ProtocolHeaderHandler interface {
 	WriteTripleReqHeaderField(header http.Header) http.Header
 
 	// WriteTripleFinalRspHeaderField write protocol trailer fields to http2 trailer header
-	WriteTripleFinalRspHeaderField(w http.ResponseWriter,grpcStatusCode int, grpcMessage string, traceProtoBin int)
+	WriteTripleFinalRspHeaderField(w http.ResponseWriter, grpcStatusCode int, grpcMessage string, traceProtoBin int)
 }
-
 
 type StreamingRequest struct {
 	SendChan chan BufferMsg
-	Handler ProtocolHeaderHandler
+	Handler  ProtocolHeaderHandler
 }
 
-func (sr*StreamingRequest)Read(p []byte)(n int, err error){
+func (sr *StreamingRequest) Read(p []byte) (n int, err error) {
 	return 0, nil
 }
 
-func (sr *StreamingRequest) Close() error{
+func (sr *StreamingRequest) Close() error {
 	return nil
 }

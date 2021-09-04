@@ -305,8 +305,8 @@ type clientStream struct {
 	num1xx       uint8 // number of 1xx responses seen
 
 	trailerChan chan http.Header
-	trailer    http.Header  // accumulated trailers
-	resTrailer *http.Header // client's Response.Trailer
+	trailer     http.Header  // accumulated trailers
+	resTrailer  *http.Header // client's Response.Trailer
 }
 
 // awaitRequestCancel waits for the user to cancel a request or for the done
@@ -1321,7 +1321,6 @@ func (cs *clientStream) writeRequestBody(body io.Reader, bodyCloser io.Closer) (
 	sreq := body.(*triple.StreamingRequest)
 	sendChan := sreq.SendChan
 
-
 	defer func() {
 		traceWroteRequest(cs.trace, err)
 		// TODO: write h12Compare test showing whether
@@ -1339,15 +1338,14 @@ func (cs *clientStream) writeRequestBody(body io.Reader, bodyCloser io.Closer) (
 	remainLen := actualContentLength(req)
 	hasContentLen := remainLen != -1
 
-
 	for {
-		newMsgBuffer := <- sendChan
-		if newMsgBuffer.MsgType == triple.ServerStreamCloseMsgType{
+		newMsgBuffer := <-sendChan
+		if newMsgBuffer.MsgType == triple.ServerStreamCloseMsgType {
 			break
 		}
 		newBody := newMsgBuffer.Buffer
 		var sawEOF bool
-		for !sawEOF{
+		for !sawEOF {
 			n, err := newBody.Read(buf[:len(buf)-1])
 			if hasContentLen {
 				remainLen -= int64(n)
@@ -1411,7 +1409,6 @@ func (cs *clientStream) writeRequestBody(body io.Reader, bodyCloser io.Closer) (
 			}
 		}
 	}
-
 
 	if sentEnd {
 		// Already sent END_STREAM (which implies we have no
@@ -1518,7 +1515,6 @@ func (cc *ClientConn) encodeHeaders(req *http.Request, addGzipHeader bool, trail
 	// 2. req.Header <- write
 	sreq := req.Body.(*triple.StreamingRequest)
 	req.Header = sreq.Handler.WriteTripleReqHeaderField(req.Header)
-
 
 	// Check for any invalid headers and return an error before we
 	// potentially pollute our hpack state. (We want to be able to
@@ -1714,11 +1710,11 @@ type resAndError struct {
 // requires cc.mu be held.
 func (cc *ClientConn) newStream() *clientStream {
 	cs := &clientStream{
-		cc:        cc,
-		ID:        cc.nextStreamID,
-		resc:      make(chan resAndError, 1),
-		peerReset: make(chan struct{}),
-		done:      make(chan struct{}),
+		cc:          cc,
+		ID:          cc.nextStreamID,
+		resc:        make(chan resAndError, 1),
+		peerReset:   make(chan struct{}),
+		done:        make(chan struct{}),
 		trailerChan: make(chan http.Header),
 	}
 	cs.flow.add(int32(cc.initialWindowSize))
@@ -1951,7 +1947,7 @@ func (rl *clientConnReadLoop) processHeaders(f *MetaHeadersFrame) error {
 	if !cs.pastHeaders {
 		cs.pastHeaders = true
 	} else {
-		if err := rl.processTrailers(cs, f); err != nil{
+		if err := rl.processTrailers(cs, f); err != nil {
 			return err
 		}
 		cs.trailerChan <- cs.trailer
