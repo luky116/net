@@ -3,10 +3,9 @@ module github.com/dubbogo/net/http2/h2demo
 go 1.12
 
 require (
-	cloud.google.com/go v0.38.0
-	go4.org v0.0.0-20190218023631-ce4c26f7be8e
-	golang.org/x/build v0.0.0-20190509182522-45de920fc22c
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/sys v0.0.0-20210423082822-04245dca01da
+	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
+	golang.org/x/text v0.3.6
 	github.com/dubbogo/net v0.0.0-20190502183928-7f726cade0ab
 )
 

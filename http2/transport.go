@@ -352,8 +352,8 @@ type clientStream struct {
 	readAborted  bool  // read loop reset the stream
 
 	trailerChan chan http.Header
-	trailer    http.Header  // accumulated trailers
-	resTrailer *http.Header // client's Response.Trailer
+	trailer     http.Header  // accumulated trailers
+	resTrailer  *http.Header // client's Response.Trailer
 }
 
 var got1xxFuncForTests func(int, textproto.MIMEHeader) error
@@ -1110,6 +1110,7 @@ func (cc *ClientConn) RoundTrip(req *http.Request) (*http.Response, error) {
 		trace:                httptrace.ContextClientTrace(ctx),
 		peerClosed:           make(chan struct{}),
 		abort:                make(chan struct{}),
+		trailerChan:          make(chan http.Header),
 		respHeaderRecv:       make(chan struct{}),
 		donec:                make(chan struct{}),
 	}
@@ -1152,6 +1153,12 @@ func (cc *ClientConn) RoundTrip(req *http.Request) (*http.Response, error) {
 					return nil, err
 				}
 			}
+			// set triple response body with can return channel of trailer
+			oriBody := res.Body
+			triBody := &triple.ResponseBody{}
+			triBody.SetRawHttp2ResponseBody(oriBody)
+			triBody.SetTrailerChan(cs.trailerChan)
+			res.Body = triBody
 			return res, nil
 		case <-cs.abort:
 			waitDone()
@@ -1608,7 +1615,6 @@ func (cs *clientStream) writeRequestBody(req *http.Request) (err error) {
 		}
 	}
 
-
 	if sentEnd {
 		// Already sent END_STREAM (which implies we have no
 		// trailers) and flushed, because currently all
@@ -1728,7 +1734,6 @@ func (cc *ClientConn) encodeHeaders(req *http.Request, addGzipHeader bool, trail
 	// 2. req.Header <- write
 	sreq := req.Body.(*triple.StreamingRequest)
 	req.Header = sreq.Handler.WriteTripleReqHeaderField(req.Header)
-
 
 	// Check for any invalid headers and return an error before we
 	// potentially pollute our hpack state. (We want to be able to
@@ -1940,9 +1945,9 @@ func (cc *ClientConn) addStreamLocked(cs *clientStream) {
 	cs.inflow.add(transportDefaultStreamFlow)
 	cs.inflow.setConnFlow(&cc.inflow)
 	cs.ID = cc.nextStreamID
+	cs.trailerChan = make(chan http.Header)
 	cc.nextStreamID += 2
 	cc.streams[cs.ID] = cs
-	cc.trailerChan = make(chan http.Header)
 	if cs.ID == 0 {
 		panic("assigned stream ID 0")
 	}
@@ -2178,7 +2183,7 @@ func (rl *clientConnReadLoop) processHeaders(f *MetaHeadersFrame) error {
 	if !cs.pastHeaders {
 		cs.pastHeaders = true
 	} else {
-		if err := rl.processTrailers(cs, f); err != nil{
+		if err := rl.processTrailers(cs, f); err != nil {
 			return err
 		}
 		cs.trailerChan <- cs.trailer

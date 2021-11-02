@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
   <component name="BranchesTreeState">
     <expand>
       <path>
@@ -19,7 +22,39 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="73c011c2-1eec-4bc8-ace4-5758734597ba" name="Default Changelist" comment="" />
+    <list default="true" id="73c011c2-1eec-4bc8-ace4-5758734597ba" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/net.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/net.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/http2/h2demo/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/http2/h2demo/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/http2/transport.go" beforeDir="false" afterPath="$PROJECT_DIR$/http2/transport.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/socket/socket_dontwait_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/socket/socket_dontwait_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/socket/socket_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/socket/socket_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/control_pktinfo.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/control_pktinfo.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/control_unix.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/control_unix.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/control_zos.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/control_zos.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_aix.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_aix.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_asmreqn.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_asmreqn.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_bsd.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_bsd.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_darwin.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_darwin.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_dragonfly.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_dragonfly.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_freebsd.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_freebsd.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_linux.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_linux.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_solaris.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_solaris.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_windows.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_windows.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv4/sys_zos.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv4/sys_zos.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/control_rfc2292_unix.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/control_rfc2292_unix.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/control_rfc3542_unix.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/control_rfc3542_unix.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/sys_aix.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/sys_aix.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/sys_bsd.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/sys_bsd.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/sys_darwin.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/sys_darwin.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/sys_freebsd.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/sys_freebsd.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/sys_linux.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/sys_linux.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/sys_solaris.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/sys_solaris.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/sys_windows.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/sys_windows.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipv6/sys_zos.go" beforeDir="false" afterPath="$PROJECT_DIR$/ipv6/sys_zos.go" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -32,9 +67,37 @@
       </list>
     </option>
   </component>
-  <component name="GOROOT" path="/usr/local/go" />
+  <component name="GOROOT" url="file:///usr/local/go" />
+  <component name="Git.Merge.Settings">
+    <option name="BRANCH" value="upstream-golang/master" />
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitToolBoxStore">
+    <option name="recentBranches">
+      <RecentBranches>
+        <option name="branchesForRepo">
+          <list>
+            <RecentBranchesForRepo>
+              <option name="branches">
+                <list>
+                  <RecentBranch>
+                    <option name="branchName" value="release-mergeGoNet" />
+                    <option name="lastUsedInstant" value="1635783666" />
+                  </RecentBranch>
+                  <RecentBranch>
+                    <option name="branchName" value="master" />
+                    <option name="lastUsedInstant" value="1635783665" />
+                  </RecentBranch>
+                </list>
+              </option>
+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+            </RecentBranchesForRepo>
+          </list>
+        </option>
+      </RecentBranches>
+    </option>
   </component>
   <component name="GoLibraries">
     <option name="indexEntireGoPath" value="false" />
@@ -49,16 +112,19 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.formatter.settings.were.checked" value="true" />
     <property name="go.import.settings.migrated" value="true" />
+    <property name="go.modules.go.list.on.any.changes.was.set" value="true" />
     <property name="go.sdk.automatically.set" value="true" />
     <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
-    <property name="last_opened_file_path" value="$USER_HOME$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.path.for.package.tslint" value="project" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
