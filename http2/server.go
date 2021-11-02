@@ -2370,7 +2370,7 @@ type responseWriterState struct {
 	conn   *serverConn
 
 	// TODO: adjust buffer writing sizes based on server config, frame size updates from peer, etc
-	bw *bufio.Writer // writing to a chunkWriter{this *responseWriterState}
+	bw   *bufio.Writer // writing to a chunkWriter{this *responseWriterState}
 	bwwr chunkWriter
 
 	// mutated by http.Handler goroutine:
@@ -2585,7 +2585,7 @@ func (rws *responseWriterState) promoteUndeclaredTrailers() {
 	}
 }
 
-func (w*Http2ResponseWriter) FlushHeader(){
+func (w *Http2ResponseWriter) FlushHeader() {
 	w.rws.bwwr.Write([]byte{})
 }
 

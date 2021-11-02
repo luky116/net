@@ -14,6 +14,8 @@ import (
 
 	"github.com/dubbogo/net/internal/iana"
 	"github.com/dubbogo/net/internal/socket"
+
+	"golang.org/x/sys/unix"
 )
 
 // IP_RECVIF is defined on AIX but doesn't work. IP_RECVINTERFACE must be used instead.

@@ -12,6 +12,8 @@ import (
 	"unsafe"
 
 	"github.com/dubbogo/net/internal/socket"
+
+	"golang.org/x/sys/unix"
 )
 
 func (so *sockOpt) getIPMreqn(c *socket.Conn) (*net.Interface, error) {

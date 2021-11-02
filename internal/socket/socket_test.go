@@ -389,8 +389,13 @@ func TestRace(t *testing.T) {
 	tests := []string{
 		`
 package main
-import "net"
-import "github.com/dubbogo/net/ipv4"
+import (
+	"log"
+	"net"
+
+    "github.com/dubbogo/net/ipv4"
+)
+
 var g byte
 
 func main() {
@@ -419,8 +424,13 @@ func main() {
 `,
 		`
 package main
-import "net"
-import "github.com/dubbogo/net/ipv4"
+import (
+	"log"
+	"net"
+
+	"github.com/dubbogo/net/ipv4"
+)
+
 func main() {
 	c, err := net.ListenPacket("udp", "127.0.0.1:0")
 	if err != nil {
