@@ -43,14 +43,37 @@ func stderrv() io.Writer {
 	return ioutil.Discard
 }
 
+type safeBuffer struct {
+	b bytes.Buffer
+	m sync.Mutex
+}
+
+func (sb *safeBuffer) Write(d []byte) (int, error) {
+	sb.m.Lock()
+	defer sb.m.Unlock()
+	return sb.b.Write(d)
+}
+
+func (sb *safeBuffer) Bytes() []byte {
+	sb.m.Lock()
+	defer sb.m.Unlock()
+	return sb.b.Bytes()
+}
+
+func (sb *safeBuffer) Len() int {
+	sb.m.Lock()
+	defer sb.m.Unlock()
+	return sb.b.Len()
+}
+
 type serverTester struct {
 	cc             net.Conn // client conn
 	t              testing.TB
 	ts             *httptest.Server
 	fr             *Framer
-	serverLogBuf   bytes.Buffer // logger for httptest.Server
-	logFilter      []string     // substrings to filter out
-	scMu           sync.Mutex   // guards sc
+	serverLogBuf   safeBuffer // logger for httptest.Server
+	logFilter      []string   // substrings to filter out
+	scMu           sync.Mutex // guards sc
 	sc             *serverConn
 	hpackDec       *hpack.Decoder
 	decodedHeaders [][2]string
@@ -1162,12 +1185,34 @@ func TestServer_Ping(t *testing.T) {
 	}
 }
 
+type filterListener struct {
+	net.Listener
+	accept func(conn net.Conn) (net.Conn, error)
+}
+
+func (l *filterListener) Accept() (net.Conn, error) {
+	c, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return l.accept(c)
+}
+
 func TestServer_MaxQueuedControlFrames(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
 
-	st := newServerTester(t, nil)
+	st := newServerTester(t, nil, func(ts *httptest.Server) {
+		// TCP buffer sizes on test systems aren't under our control and can be large.
+		// Create a conn that blocks after 10000 bytes written.
+		ts.Listener = &filterListener{
+			Listener: ts.Listener,
+			accept: func(conn net.Conn) (net.Conn, error) {
+				return newBlockingWriteConn(conn, 10000), nil
+			},
+		}
+	})
 	defer st.Close()
 	st.greet()
 
@@ -3363,6 +3408,17 @@ func TestConfigureServer(t *testing.T) {
 			name: "empty server",
 		},
 		{
+			name:      "empty CipherSuites",
+			tlsConfig: &tls.Config{},
+		},
+		{
+			name: "bad CipherSuites but MinVersion TLS 1.3",
+			tlsConfig: &tls.Config{
+				MinVersion:   tls.VersionTLS13,
+				CipherSuites: []uint16{tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384},
+			},
+		},
+		{
 			name: "just the required cipher suite",
 			tlsConfig: &tls.Config{
 				CipherSuites: []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
@@ -3386,7 +3442,6 @@ func TestConfigureServer(t *testing.T) {
 			tlsConfig: &tls.Config{
 				CipherSuites: []uint16{tls.TLS_RSA_WITH_RC4_128_SHA, tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
 			},
-			wantErr: "contains an HTTP/2-approved cipher suite (0xc02f), but it comes after",
 		},
 		{
 			name: "bad after required",
@@ -4265,5 +4320,46 @@ func TestServerWindowUpdateOnBodyClose(t *testing.T) {
 
 	if err := <-errc; err != nil {
 		t.Error(err)
+	}
+}
+
+func TestNoErrorLoggedOnPostAfterGOAWAY(t *testing.T) {
+	st := newServerTester(t, func(w http.ResponseWriter, r *http.Request) {})
+	defer st.Close()
+
+	st.greet()
+
+	content := "some content"
+	st.writeHeaders(HeadersFrameParam{
+		StreamID: 1,
+		BlockFragment: st.encodeHeader(
+			":method", "POST",
+			"content-length", strconv.Itoa(len(content)),
+		),
+		EndStream:  false,
+		EndHeaders: true,
+	})
+	st.wantHeaders()
+
+	st.sc.startGracefulShutdown()
+	for {
+		f, err := st.readFrame()
+		if err == io.EOF {
+			st.t.Fatal("got a EOF; want *GoAwayFrame")
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if gf, ok := f.(*GoAwayFrame); ok && gf.StreamID == 0 {
+			break
+		}
+	}
+
+	st.writeData(1, true, []byte(content))
+	time.Sleep(200 * time.Millisecond)
+	st.Close()
+
+	if bytes.Contains(st.serverLogBuf.Bytes(), []byte("PROTOCOL_ERROR")) {
+		t.Error("got protocol error")
 	}
 }
