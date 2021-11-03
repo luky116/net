@@ -1577,7 +1577,6 @@ func (cs *clientStream) writeRequestBody(req *http.Request) (err error) {
 				}
 				if remainLen < 0 {
 					err = errReqBodyTooLong
-					// todo 待确认
 					cc.writeStreamReset(cs.ID, ErrCodeCancel, err)
 					return err
 				}
